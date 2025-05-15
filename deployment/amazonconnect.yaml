@@ -1,0 +1,444 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: The template will create the resources needed for the amazon connect
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - 
+        Label: 
+          default: "AWS"
+        Parameters:
+          - Prefix
+
+Parameters:  
+  Prefix:
+    Description: Prefix for resource names
+    Type: String
+    Default: Sample
+
+Resources:
+  SampleConnect:
+    Type: AWS::Connect::Instance
+    Properties:
+      Attributes:
+        InboundCalls: True
+        OutboundCalls: True
+        ContactflowLogs: True
+      IdentityManagementType: "CONNECT_MANAGED"
+      InstanceAlias: !Join ['-', [sample, !Select [4, !Split ['-', !Select [2, !Split ['/', !Ref AWS::StackId]]]]]]
+
+  SampleConnectKmsKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: KMSKeyForConnect
+      Enabled: true
+      EnableKeyRotation: true  
+      KeyPolicy:
+        Version: 2012-10-17
+        Id: sampleconnectkmskey1
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action:
+              - 'kms:*'
+            Resource: '*'
+
+  SampleConnectS3Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+          BucketName: !Sub
+            - 'sample-${UUID}'
+            - UUID: !Select [4, !Split ['-', !Select [2, !Split ['/', !Ref AWS::StackId]]]]
+          PublicAccessBlockConfiguration:
+              BlockPublicAcls: True
+              BlockPublicPolicy: True
+              IgnorePublicAcls: True
+              RestrictPublicBuckets: True
+
+  SampleConnectStorage:
+    Type: AWS::Connect::InstanceStorageConfig
+    DependsOn:
+      - SampleConnect
+      - SampleConnectS3Bucket
+    Properties:
+      InstanceArn: !GetAtt SampleConnect.Arn
+      ResourceType: CALL_RECORDINGS
+      S3Config:
+        BucketName: !Ref SampleConnectS3Bucket
+        BucketPrefix: recordings
+        EncryptionConfig:
+          EncryptionType: KMS
+          KeyId: !GetAtt SampleConnectKmsKey.Arn
+      StorageType: S3                           
+
+  SampleHoursOfOp:
+    Type: AWS::Connect::HoursOfOperation
+    Properties: 
+      Config: 
+          - Day: 'SUNDAY'
+            EndTime:
+              Hours: 00
+              Minutes: 00
+            StartTime:
+              Hours: 00
+              Minutes: 00
+          - Day: 'MONDAY'
+            EndTime:
+              Hours: 00
+              Minutes: 00
+            StartTime:
+              Hours: 00
+              Minutes: 00
+          - Day: 'TUESDAY'
+            EndTime:
+              Hours: 00
+              Minutes: 00
+            StartTime:
+              Hours: 00
+              Minutes: 00
+          - Day: 'WEDNESDAY'
+            EndTime:
+              Hours: 00
+              Minutes: 00
+            StartTime:
+              Hours: 00
+              Minutes: 00
+          - Day: 'THURSDAY'
+            EndTime:
+              Hours: 00
+              Minutes: 00
+            StartTime:
+              Hours: 00
+              Minutes: 00
+          - Day: 'FRIDAY'
+            EndTime:
+              Hours: 00
+              Minutes: 00
+            StartTime:
+              Hours: 00
+              Minutes: 00
+          - Day: 'SATURDAY'
+            EndTime:
+              Hours: 00
+              Minutes: 00
+            StartTime:
+              Hours: 00
+              Minutes: 00
+      Description: Hours of opeartion Sample, set to 24X7
+      InstanceArn: !GetAtt SampleConnect.Arn
+      Name: 'SampleHoursOfOperations'
+      TimeZone: 'US/Eastern'
+
+  SampleQueue:
+    Type: AWS::Connect::Queue
+    DependsOn: 
+      - SampleHoursOfOp
+    Properties: 
+      Description: !Sub 'SampleQueue-${AWS::StackName}'
+      HoursOfOperationArn: !GetAtt SampleHoursOfOp.HoursOfOperationArn
+      InstanceArn: !GetAtt SampleConnect.Arn
+      Name: 'SampleQueue'
+      Status: ENABLED
+
+  SampleRoutingProfile:
+    Type: AWS::Connect::RoutingProfile
+    Properties: 
+      DefaultOutboundQueueArn: !GetAtt SampleQueue.QueueArn
+      Description: !Sub 'SampleRoutingProfile-${AWS::StackName}'
+      InstanceArn: !GetAtt SampleConnect.Arn
+      Name: 'SampleRoutingProfile'
+      MediaConcurrencies: 
+        - Channel: VOICE
+          Concurrency: 1
+          CrossChannelBehavior: 
+            BehaviorType: ROUTE_CURRENT_CHANNEL_ONLY            
+        - Channel: CHAT
+          Concurrency: 1
+          CrossChannelBehavior: 
+            BehaviorType: ROUTE_CURRENT_CHANNEL_ONLY
+        - Channel: TASK
+          Concurrency: 1
+          CrossChannelBehavior: 
+            BehaviorType: ROUTE_CURRENT_CHANNEL_ONLY                        
+      QueueConfigs: 
+        - Delay: 0
+          Priority: 1
+          QueueReference: 
+              Channel: VOICE
+              QueueArn: !GetAtt SampleQueue.QueueArn
+        - Delay: 0
+          Priority: 1
+          QueueReference: 
+              Channel: CHAT
+              QueueArn: !GetAtt SampleQueue.QueueArn
+        - Delay: 0
+          Priority: 1
+          QueueReference: 
+              Channel: TASK
+              QueueArn: !GetAtt SampleQueue.QueueArn
+  
+  SampleConnectUser: 
+    Type: AWS::Connect::User
+    DependsOn: 
+      - SampleLambdaInvoketogetSecurityProfile
+    Properties: 
+      InstanceArn: !GetAtt SampleConnect.Arn
+      Username: Sampleadmin
+      Password: Connect2025
+      IdentityInfo: {"FirstName": "Admin", "LastName": "User"}
+      RoutingProfileArn: !GetAtt SampleRoutingProfile.RoutingProfileArn
+      SecurityProfileArns: [!GetAtt SampleLambdaInvoketogetSecurityProfile.SecProfile]
+      PhoneConfig: {"PhoneType": "SOFT_PHONE"}
+  
+  SampleContactFlow:
+    Type: AWS::Connect::ContactFlow  
+    Properties:
+      Name: SampleContactflow
+      Description: Plays a message and transfers to a queue
+      InstanceArn: !GetAtt SampleConnect.Arn
+      Type: CONTACT_FLOW
+      Content: !Sub |
+        {"Version":"2019-10-30","StartAction":"1d641d97-000e-4af1-a325-8bf57cd04c60","Metadata":{"entryPointPosition":{"x":40,"y":40},"ActionMetadata":{"9ce12cf0-5388-430a-9544-03a3278dae6c":{"position":{"x":968,"y":99.2}},"1d641d97-000e-4af1-a325-8bf57cd04c60":{"position":{"x":178.4,"y":49.6}},"4e943f20-8e13-4144-b450-788d44956cbc":{"position":{"x":702.4,"y":70.4}},"6c356030-ce38-4a9f-a355-281ad1cd25e9":{"position":{"x":432.8,"y":64},"parameters":{"QueueId":{"displayName":"SampleQueue"}},"queue":{"text":"SampleQueue"}}},"Annotations":[],"name":"SampleContactflow","description":"","type":"contactFlow","status":"SAVED","hash":{}},"Actions":[{"Parameters":{},"Identifier":"9ce12cf0-5388-430a-9544-03a3278dae6c","Type":"DisconnectParticipant","Transitions":{}},{"Parameters":{"Text":"Hello, thank you for using Amazon Connect for your call center application. Your call is very important to us and will be answered in the order it was received."},"Identifier":"1d641d97-000e-4af1-a325-8bf57cd04c60","Type":"MessageParticipant","Transitions":{"NextAction":"6c356030-ce38-4a9f-a355-281ad1cd25e9","Errors":[{"NextAction":"6c356030-ce38-4a9f-a355-281ad1cd25e9","ErrorType":"NoMatchingError"}]}},{"Parameters":{},"Identifier":"4e943f20-8e13-4144-b450-788d44956cbc","Type":"TransferContactToQueue","Transitions":{"NextAction":"9ce12cf0-5388-430a-9544-03a3278dae6c","Errors":[{"NextAction":"9ce12cf0-5388-430a-9544-03a3278dae6c","ErrorType":"QueueAtCapacity"},{"NextAction":"9ce12cf0-5388-430a-9544-03a3278dae6c","ErrorType":"NoMatchingError"}]}},{"Parameters":{"QueueId":"${SampleQueue.QueueArn}"},"Identifier":"6c356030-ce38-4a9f-a355-281ad1cd25e9","Type":"UpdateContactTargetQueue","Transitions":{"NextAction":"4e943f20-8e13-4144-b450-788d44956cbc","Errors":[{"NextAction":"4e943f20-8e13-4144-b450-788d44956cbc","ErrorType":"NoMatchingError"}]}}]}
+
+  SamplePhonenumber: 
+    Type: AWS::Connect::PhoneNumber    
+    Properties:
+      CountryCode: US
+      TargetArn: !GetAtt SampleConnect.Arn
+      Type: TOLL_FREE
+
+  SampleIAMRole:
+    Type: "AWS::IAM::Role"
+    DependsOn:
+      - SampleConnect
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+                - "sts:AssumeRole"
+      Description: Required to Build Connect
+      Policies:
+        - PolicyName: Pre-BuildConnectComponents
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - connect:List*
+                  - connect:Associate*
+                  - connect:Disassociate*
+                  - states:StartExecution
+                  - kms:ListAliases
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+
+  SampleLambdaInvoketogetSecurityProfile:
+    Type: AWS::CloudFormation::CustomResource
+    DependsOn:
+      - SampleSecurityProfileInfoFromConnect
+    Version: "1.0"
+    Properties:
+      ServiceToken: !GetAtt SampleSecurityProfileInfoFromConnect.Arn
+
+  SampleSecurityProfileInfoFromConnect:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Function to get Connect Security Profile
+      Environment:
+        Variables:
+          INSTANCEARN: !GetAtt SampleConnect.Arn
+      Code:
+        ZipFile: |
+          # MIT No Attribution
+
+          # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+          # Permission is hereby granted, free of charge, to any person obtaining a copy of this
+          # software and associated documentation files (the "Software"), to deal in the Software
+          # without restriction, including without limitation the rights to use, copy, modify,
+          # merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+          # permit persons to whom the Software is furnished to do so.
+
+          # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+          # INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+          # PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+          # HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+          # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+          # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+          import json
+          import boto3
+          import os
+          import cfnresponse
+
+          client = boto3.client('connect')
+
+          InstanceArn= os.environ['INSTANCEARN']
+
+          # This Lambda retrieves the details of security profile
+          def lambda_handler(event, context):
+              print(event)
+
+              if event['RequestType'] == 'Create':
+                  print(event)
+
+                  # List Security Profiles
+                  try:
+                      InstanceId = InstanceArn[-36:]
+
+                      # List Security Profiles
+                      responseListSecProfiles = client.list_security_profiles(
+                          InstanceId=InstanceId,
+                          MaxResults=50
+                      )
+                      print(responseListSecProfiles)
+                      SecProfilesList = responseListSecProfiles ["SecurityProfileSummaryList"]
+
+                      for x in SecProfilesList:
+                          if x['Name'] == "Admin":
+                              AdminSecProfileArn=x['Arn']
+                              print("AdminSecProfileArn= " + AdminSecProfileArn)
+
+                      responseData = {}
+                      responseData['SecProfile'] = AdminSecProfileArn
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, "CustomResourcePhysicalID")
+                      print(responseData)
+
+                  except Exception as a:
+                      print (a)
+                      return { 'message': 'Failed listing Queues and ContactFlows' }
+
+              else:
+                  responseData = {}
+                  responseData['Data'] = "Delete"
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, "CustomResourcePhysicalID")
+
+      Handler: index.lambda_handler
+      Role: !GetAtt SampleIAMRole.Arn
+      Runtime: python3.9                      
+
+  SampleAssignClaimedPhoneNumber:
+    Type: AWS::CloudFormation::CustomResource
+    DependsOn:
+      - SampleFnAssignClaimedPhoneNumber
+    Version: "1.0"
+    Properties:
+      ServiceToken: !GetAtt SampleFnAssignClaimedPhoneNumber.Arn                      
+
+  SampleFnAssignClaimedPhoneNumber:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Function to assign toll free number
+      Environment:
+        Variables:
+          INSTANCEARN: !GetAtt SampleConnect.Arn
+          PHONENUMBERARN: !GetAtt SamplePhonenumber.PhoneNumberArn
+          CONTACTFLOWARN: !GetAtt SampleContactFlow.ContactFlowArn
+      Code:
+        ZipFile: |
+          # MIT No Attribution
+
+          # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+          # Permission is hereby granted, free of charge, to any person obtaining a copy of this
+          # software and associated documentation files (the "Software"), to deal in the Software
+          # without restriction, including without limitation the rights to use, copy, modify,
+          # merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+          # permit persons to whom the Software is furnished to do so.
+
+          # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+          # INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+          # PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+          # HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+          # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+          # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+          import json
+          import boto3
+          import os
+          import cfnresponse
+
+          client = boto3.client('connect')
+
+          InstanceArn= os.environ['INSTANCEARN']
+          TollFreeArn = os.environ['PHONENUMBERARN']
+          ContactFlowArn = os.environ['CONTACTFLOWARN']
+
+          def lambda_handler(event, context):
+
+            print(event)
+
+            if event['RequestType'] == 'Create':
+              try:
+                InstanceId = InstanceArn[-36:]
+                ContactFlowId = ContactFlowArn[-36:]
+                response = client.associate_phone_number_contact_flow(
+                  PhoneNumberId=TollFreeArn,
+                  InstanceId=InstanceId,
+                  ContactFlowId=ContactFlowId
+                )
+
+                responseData = {}
+                responseData['response'] = response
+                cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, "CustomResourcePhysicalID")
+                print(response)
+
+              except Exception as a:
+                print (a)
+                return { 'message': 'Failed to associate the phone number to contact flow' }
+
+            elif event['RequestType'] == 'Delete':
+              try:
+                InstanceId = InstanceArn[-36:]
+                response = client.disassociate_phone_number_contact_flow(
+                  PhoneNumberId=TollFreeArn,
+                  InstanceId=InstanceId
+                )
+
+                responseData = {}
+                responseData['response'] = response
+                cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, "CustomResourcePhysicalID")
+                print(response)
+
+              except Exception as a:
+                print (a)
+                return { 'message': 'Failed to disassociate the phone number to contact flow' }                
+
+            else:
+                responseData = {}
+                responseData['Data'] = "Delete"
+                cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, "CustomResourcePhysicalID")
+
+      Handler: index.lambda_handler
+      Role: !GetAtt SampleIAMRole.Arn
+      Runtime: python3.9      
+
+Outputs:
+  ConnectInstanceUrl:
+    Description: "Amazon Connect URL"
+    Value: !Join 
+      - ''
+      - - 'https://'
+        - !Join ['-', [sample, !Select [4, !Split ['-', !Select [2, !Split ['/', !Ref AWS::StackId]]]]]]
+        - '.my.connect.aws/agent-app-v2'
+  AdminUsername:
+    Description: Amazon Connect Admin Username
+    Value: 'Sampleadmin'
+  Password:
+    Description: Amazon Connect Admin Password
+    Value: 'Connect2025'    
+  TollFreeNumber:
+    Description: Claimed Phone number
+    Value: !GetAtt SamplePhonenumber.Address
