@@ -36,13 +36,15 @@ Typically, this solution should be deployed by a user with full access to your A
 
 1.	Click on the "Launch Stack" button to deploy the solution in your preferred region. This will be the same region that was used to deploy your Amazon Connect instance.
 2.	Provide the required parameters:
-- Stack name
-- Provide prefix for the Amazon Connect Access URL
+    - Stack name
+    - Provide prefix for the Amazon Connect Access URL
 
 ![Createstack](/assets/Createstack.png)
 
 3.	Proceed with the stack creation steps.
+
 **Note:** It will take few minutes for the stack to complete the deployment.
+
 4.	Once the stack is deployed, in the **Output** tab, note the value of the **AdminUsername**, **Password** and **TollFreeNumber**. Login to the ConnectInstanceUrl with these credentials. 
 
 ![Stackoutput](/assets/Stackoutput.png)
@@ -69,6 +71,6 @@ Refer to amazon connect pricing: https://aws.amazon.com/connect/pricing/
 
 ## Cleanup
 1.	Select the CloudFormation stack created earlier
-2.	Click on delete. This will delete all the resources created as part of this CloudFormation stack.
+2.	Click on **Delete**. This will delete all the resources created as part of this CloudFormation stack.
 
 ![Deletestack](/assets/Deletestack.png)
