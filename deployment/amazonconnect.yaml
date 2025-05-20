@@ -1,4 +1,19 @@
 AWSTemplateFormatVersion: "2010-09-09"
+#################################################################################################
+#
+# CFT: Creates the following Amazon Connect assets
+#   1. Amazon Connect Instance
+#   2. KMS key for S3 Bucket Encryption
+#   3. S3 Bucket for storing the call recordings
+#   4. Hours of Operation
+#   5. Amazon Connect Queue
+#   6. Amazon Connect Routing Profile
+#   7. Amazon Connect User
+#   8. Amazon Connect Contact Flow
+#   9. Amazon Connect Phone Number
+#   10. IAM role for lambda
+#   11. 2 Lambda functions
+#################################################################################################
 Description: The template will create the resources needed for the amazon connect
 
 Metadata:
@@ -17,6 +32,9 @@ Parameters:
     Default: Sample
 
 Resources:
+#####################################################
+# Amazon Connect Instance
+#####################################################
   SampleConnect:
     Type: AWS::Connect::Instance
     Properties:
@@ -26,7 +44,9 @@ Resources:
         ContactflowLogs: True
       IdentityManagementType: "CONNECT_MANAGED"
       InstanceAlias: !Join ['-', [sample, !Select [4, !Split ['-', !Select [2, !Split ['/', !Ref AWS::StackId]]]]]]
-
+#####################################################
+# KMS key for S3 Bucket Encryption
+#####################################################
   SampleConnectKmsKey:
     Type: AWS::KMS::Key
     Properties:
@@ -44,7 +64,9 @@ Resources:
             Action:
               - 'kms:*'
             Resource: '*'
-
+#####################################################
+# S3 Bucket for storing the call recordings and transcripts
+#####################################################
   SampleConnectS3Bucket:
       Type: AWS::S3::Bucket
       Properties:
@@ -56,7 +78,9 @@ Resources:
               BlockPublicPolicy: True
               IgnorePublicAcls: True
               RestrictPublicBuckets: True
-
+#####################################################
+# Amazon Connect Storage Configuration
+#####################################################
   SampleConnectStorage:
     Type: AWS::Connect::InstanceStorageConfig
     DependsOn:
@@ -72,7 +96,9 @@ Resources:
           EncryptionType: KMS
           KeyId: !GetAtt SampleConnectKmsKey.Arn
       StorageType: S3                           
-
+#####################################################
+# Create Hours of operations
+#####################################################
   SampleHoursOfOp:
     Type: AWS::Connect::HoursOfOperation
     Properties: 
@@ -130,7 +156,9 @@ Resources:
       InstanceArn: !GetAtt SampleConnect.Arn
       Name: 'SampleHoursOfOperations'
       TimeZone: 'US/Eastern'
-
+#####################################################
+# Create queue to route the calls
+#####################################################
   SampleQueue:
     Type: AWS::Connect::Queue
     DependsOn: 
@@ -141,7 +169,9 @@ Resources:
       InstanceArn: !GetAtt SampleConnect.Arn
       Name: 'SampleQueue'
       Status: ENABLED
-
+#####################################################
+# Create Routing Profile
+#####################################################
   SampleRoutingProfile:
     Type: AWS::Connect::RoutingProfile
     Properties: 
@@ -178,7 +208,9 @@ Resources:
           QueueReference: 
               Channel: TASK
               QueueArn: !GetAtt SampleQueue.QueueArn
-  
+#####################################################
+# Create User
+#####################################################  
   SampleConnectUser: 
     Type: AWS::Connect::User
     DependsOn: 
@@ -191,7 +223,9 @@ Resources:
       RoutingProfileArn: !GetAtt SampleRoutingProfile.RoutingProfileArn
       SecurityProfileArns: [!GetAtt SampleLambdaInvoketogetSecurityProfile.SecProfile]
       PhoneConfig: {"PhoneType": "SOFT_PHONE"}
-  
+#####################################################
+# Create Contat Flow
+#####################################################  
   SampleContactFlow:
     Type: AWS::Connect::ContactFlow  
     Properties:
@@ -201,14 +235,18 @@ Resources:
       Type: CONTACT_FLOW
       Content: !Sub |
         {"Version":"2019-10-30","StartAction":"1d641d97-000e-4af1-a325-8bf57cd04c60","Metadata":{"entryPointPosition":{"x":40,"y":40},"ActionMetadata":{"9ce12cf0-5388-430a-9544-03a3278dae6c":{"position":{"x":968,"y":99.2}},"1d641d97-000e-4af1-a325-8bf57cd04c60":{"position":{"x":178.4,"y":49.6}},"4e943f20-8e13-4144-b450-788d44956cbc":{"position":{"x":702.4,"y":70.4}},"6c356030-ce38-4a9f-a355-281ad1cd25e9":{"position":{"x":432.8,"y":64},"parameters":{"QueueId":{"displayName":"SampleQueue"}},"queue":{"text":"SampleQueue"}}},"Annotations":[],"name":"SampleContactflow","description":"","type":"contactFlow","status":"SAVED","hash":{}},"Actions":[{"Parameters":{},"Identifier":"9ce12cf0-5388-430a-9544-03a3278dae6c","Type":"DisconnectParticipant","Transitions":{}},{"Parameters":{"Text":"Hello, thank you for using Amazon Connect for your call center application. Your call is very important to us and will be answered in the order it was received."},"Identifier":"1d641d97-000e-4af1-a325-8bf57cd04c60","Type":"MessageParticipant","Transitions":{"NextAction":"6c356030-ce38-4a9f-a355-281ad1cd25e9","Errors":[{"NextAction":"6c356030-ce38-4a9f-a355-281ad1cd25e9","ErrorType":"NoMatchingError"}]}},{"Parameters":{},"Identifier":"4e943f20-8e13-4144-b450-788d44956cbc","Type":"TransferContactToQueue","Transitions":{"NextAction":"9ce12cf0-5388-430a-9544-03a3278dae6c","Errors":[{"NextAction":"9ce12cf0-5388-430a-9544-03a3278dae6c","ErrorType":"QueueAtCapacity"},{"NextAction":"9ce12cf0-5388-430a-9544-03a3278dae6c","ErrorType":"NoMatchingError"}]}},{"Parameters":{"QueueId":"${SampleQueue.QueueArn}"},"Identifier":"6c356030-ce38-4a9f-a355-281ad1cd25e9","Type":"UpdateContactTargetQueue","Transitions":{"NextAction":"4e943f20-8e13-4144-b450-788d44956cbc","Errors":[{"NextAction":"4e943f20-8e13-4144-b450-788d44956cbc","ErrorType":"NoMatchingError"}]}}]}
-
+#####################################################
+# Claiming the Phone Number
+#####################################################
   SamplePhonenumber: 
     Type: AWS::Connect::PhoneNumber    
     Properties:
       CountryCode: US
       TargetArn: !GetAtt SampleConnect.Arn
       Type: TOLL_FREE
-
+#####################################################
+# IAM Role for Lambda execution
+#####################################################
   SampleIAMRole:
     Type: "AWS::IAM::Role"
     DependsOn:
@@ -243,7 +281,9 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: "*"
-
+#####################################################
+# Execute the lambda
+#####################################################
   SampleLambdaInvoketogetSecurityProfile:
     Type: AWS::CloudFormation::CustomResource
     DependsOn:
@@ -251,7 +291,9 @@ Resources:
     Version: "1.0"
     Properties:
       ServiceToken: !GetAtt SampleSecurityProfileInfoFromConnect.Arn
-
+#####################################################
+# Lambda function to get the Admin Security Profile ARN Details
+#####################################################
   SampleSecurityProfileInfoFromConnect:
     Type: AWS::Lambda::Function
     Properties:
@@ -328,7 +370,9 @@ Resources:
       Handler: index.lambda_handler
       Role: !GetAtt SampleIAMRole.Arn
       Runtime: python3.9                      
-
+#####################################################
+# Execute the lambda
+#####################################################
   SampleAssignClaimedPhoneNumber:
     Type: AWS::CloudFormation::CustomResource
     DependsOn:
@@ -336,7 +380,9 @@ Resources:
     Version: "1.0"
     Properties:
       ServiceToken: !GetAtt SampleFnAssignClaimedPhoneNumber.Arn                      
-
+#####################################################
+# Lambda function to associate and disassociate the phone number to conatct flow
+#####################################################
   SampleFnAssignClaimedPhoneNumber:
     Type: AWS::Lambda::Function
     Properties:
@@ -424,7 +470,13 @@ Resources:
       Handler: index.lambda_handler
       Role: !GetAtt SampleIAMRole.Arn
       Runtime: python3.9      
-
+#####################################################
+# Display the outputs
+# (1): Amazon Connect Instance Login URL
+# (2): User name
+# (3): Password
+# (4): Claimed TollFree Number
+#####################################################
 Outputs:
   ConnectInstanceUrl:
     Description: "Amazon Connect URL"
