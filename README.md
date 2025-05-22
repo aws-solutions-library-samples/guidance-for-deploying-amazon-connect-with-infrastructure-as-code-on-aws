@@ -20,11 +20,12 @@ The above solution deploys the required resources and follow the pattern:
 
 1.	Amazon Connect Instance
 2.	User stored in Amazon Connect
-3.	Unique instance alias with Amazon Connect Agent Workspace URL.
-4.	Toll free number
-5.	Amazon Connect Contact Flow
-6.	Amazon S3 bucket for Connect data and flow logs.
-7.	KMS keys for Connect data
+3.  Secrets manager to store user password
+4.	Unique instance alias with Amazon Connect Agent Workspace URL
+5.	Toll free number
+6.	Amazon Connect Contact Flow
+7.	Amazon S3 bucket for Connect call recordings.
+8.	KMS keys for Connect data
 
 To deploy this solution, you will need to have the following permissions in your AWS account:
 
@@ -37,7 +38,6 @@ Typically, this solution should be deployed by a user with full access to your A
 1.	Click on the "Launch Stack" button to deploy the solution in your preferred region. This will be the same region that was used to deploy your Amazon Connect instance.
 2.	Provide the required parameters:
     - Stack name
-    - Provide prefix for the Amazon Connect Access URL
 
 ![Createstack](/assets/Createstack.png)
 
@@ -45,21 +45,21 @@ Typically, this solution should be deployed by a user with full access to your A
 
 **Note:** It will take few minutes for the stack to complete the deployment.
 
-4.	Once the stack is deployed, in the **Output** tab, note the value of the **AdminUsername**, **Password** and **TollFreeNumber**. Login to the ConnectInstanceUrl with these credentials. 
+4.	Once the stack is deployed, get the **Password** from Secrets manager for AdminUsername and in the cloudformation **Output** tab, note the value of the **AdminUsername**, and **TollFreeNumber**. Login to the **ConnectInstanceUrl** with these credentials. 
 
 ![Stackoutput](/assets/Stackoutput.png)
 
-5.	Navigate to the ConnectInstanceUrl. Log in to the application with the **AdminUsername** and **Password** collected in the output of the CloudFormation stack. Make sure you allow microphone to access this URL and allow notifications if this pop up in your browser.
+5.	Navigate to the **ConnectInstanceUrl**. Log in to the application with the **AdminUsername** and **Password** collected in previous step. Make sure you allow microphone to access this URL and allow notifications if this pop up in your browser.
 
 ![Notification](/assets/Notification.png)
 
 ![Allow](/assets/Allow.png)
 
-6.	Set agent status as **available** in the agent workspace to take the first call
+6.	Set agent status as **available** in the agent workspace to take the first call.
 
 ![CCP](/assets/CCP.png)
 
-7.	Call the **TollFreeNumber** for your first call experience and **accept** the call from Agent workspace
+7.	Call the **TollFreeNumber** for your first call experience and **accept** the call from Agent workspace.
 
 ![Incomingcall](/assets/Incomingcall.png)
 
@@ -70,7 +70,7 @@ Typically, this solution should be deployed by a user with full access to your A
 Refer to amazon connect pricing: https://aws.amazon.com/connect/pricing/
 
 ## Cleanup
-1.	Select the CloudFormation stack created earlier
+1.	Select the CloudFormation stack created earlier.
 2.	Click on **Delete**. This will delete all the resources created as part of this CloudFormation stack.
 
 ![Deletestack](/assets/Deletestack.png)

@@ -16,21 +16,6 @@ AWSTemplateFormatVersion: "2010-09-09"
 #################################################################################################
 Description: The template will create the resources needed for the amazon connect
 
-Metadata:
-  AWS::CloudFormation::Interface:
-    ParameterGroups:
-      - 
-        Label: 
-          default: "AWS"
-        Parameters:
-          - Prefix
-
-Parameters:  
-  Prefix:
-    Description: Prefix for resource names
-    Type: String
-    Default: Sample
-
 #####################################################
 # Runtime 
 #####################################################
