@@ -31,6 +31,14 @@ Parameters:
     Type: String
     Default: Sample
 
+#####################################################
+# Runtime 
+#####################################################
+Mappings:
+    Environment:
+        Python:
+          Runtime: python3.12    
+
 Resources:
 #####################################################
 # Amazon Connect Instance
@@ -211,6 +219,19 @@ Resources:
 #####################################################
 # Create User
 #####################################################  
+  SampleAgentPassword:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub 'AgentPassword-${AWS::StackName}'
+      Description: Password generation
+      GenerateSecretString: 
+        IncludeSpace: False
+        PasswordLength: 9
+        RequireEachIncludedType: True
+        ExcludeCharacters: '"@/\'
+        SecretStringTemplate: '{"agent-name": "Sampleadmin"}'
+        GenerateStringKey: password  
+  
   SampleConnectUser: 
     Type: AWS::Connect::User
     DependsOn: 
@@ -218,7 +239,9 @@ Resources:
     Properties: 
       InstanceArn: !GetAtt SampleConnect.Arn
       Username: Sampleadmin
-      Password: Connect2025
+      Password: !Sub
+          - "{{resolve:secretsmanager:${SecretPwd}::password}}"
+          - SecretPwd: !Ref SampleAgentPassword
       IdentityInfo: {"FirstName": "Admin", "LastName": "User"}
       RoutingProfileArn: !GetAtt SampleRoutingProfile.RoutingProfileArn
       SecurityProfileArns: [!GetAtt SampleLambdaInvoketogetSecurityProfile.SecProfile]
@@ -269,18 +292,17 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - connect:List*
-                  - connect:Associate*
-                  - connect:Disassociate*
+                  - connect:ListSecurityProfiles
+                  - connect:AssociatePhoneNumberContactFlow
+                  - connect:DisassociatePhoneNumberContactFlow
                   - states:StartExecution
-                  - kms:ListAliases
                 Resource: "*"
               - Effect: Allow
                 Action:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource: "*"
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
 #####################################################
 # Execute the lambda
 #####################################################
@@ -369,7 +391,7 @@ Resources:
 
       Handler: index.lambda_handler
       Role: !GetAtt SampleIAMRole.Arn
-      Runtime: python3.9                      
+      Runtime: !FindInMap [Environment, Python, Runtime]
 #####################################################
 # Execute the lambda
 #####################################################
@@ -469,13 +491,12 @@ Resources:
 
       Handler: index.lambda_handler
       Role: !GetAtt SampleIAMRole.Arn
-      Runtime: python3.9      
+      Runtime: !FindInMap [Environment, Python, Runtime]
 #####################################################
 # Display the outputs
 # (1): Amazon Connect Instance Login URL
 # (2): User name
-# (3): Password
-# (4): Claimed TollFree Number
+# (3): Claimed TollFree Number
 #####################################################
 Outputs:
   ConnectInstanceUrl:
@@ -487,10 +508,7 @@ Outputs:
         - '.my.connect.aws/agent-app-v2'
   AdminUsername:
     Description: Amazon Connect Admin Username
-    Value: 'Sampleadmin'
-  Password:
-    Description: Amazon Connect Admin Password
-    Value: 'Connect2025'    
+    Value: 'Sampleadmin'   
   TollFreeNumber:
     Description: Claimed Phone number
     Value: !GetAtt SamplePhonenumber.Address
