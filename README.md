@@ -8,7 +8,7 @@ This Guidance is designed to be adaptable, allowing you to customize the deploym
 
 ![Architecture](/assets/Architecture.png)
 
-Figure 1: Solutions architecture
+Figure 1: Solution architecture
 
 1.	Customer calls the Amazon Connect contact center phone number
 2.	Agent gets the call on the Agent workspace and answers the call
