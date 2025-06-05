@@ -1,8 +1,32 @@
 # Guidance for Deploying Amazon Connect with Infrastructure as Code on AWS
 
+# Table of Contents
+
+1. Overview
+    1. Cost
+2. Prerequisites
+3. Solution Overview and Architecture
+4. Deployment Steps
+5. Deployment Validation
+6. Running the Guidance
+7. Next Steps
+8. Cleanup
+
+# Overview
+
 This Guidance shows you how to deploy and manage Amazon Connect using Infrastructure as Code on AWS, enabling rapid contact center setup and optimization. The solution uses AWS CloudFormation templates to automate the provisioning of Amazon Connect instances, along with integrated AWS services for a complete contact center solution. By implementing this Infrastructure as Code approach, you gain consistent, repeatable deployments while reducing manual configuration errors and streamlining your operational processes.
 
 This Guidance is designed to be adaptable, allowing you to customize the deployment to meet your specific business requirements while maintaining operational excellence. This solution provides a foundation for delivering exceptional customer experiences at scale.
+
+## Cost
+
+You are responsible for the cost of the AWS services used while running this Guidance. The cost for running this Guidance with the default settings in the US East (N. Virginia) is approximately $46.87 per month for 1000 mins of inbound calls per month, with all calls analyzed by Contact Lens and getting recorded.
+
+## Prerequisites
+
+For this guidance, it is assumed you have the following prerequisites:
+1. An AWS account with administrator access to following services - Amazon Connect, AWS Lambda, AWS Secrets Manager, AWS AWS CloudFormation
+
 
 ## Solution overview and architecture
 
@@ -27,6 +51,8 @@ The above solution deploys the required resources and follow the pattern:
 7.	Amazon S3 bucket for Connect call recordings.
 8.	KMS keys for Connect data
 
+## Deployment Steps
+
 To deploy this solution, you will need to have the following permissions in your AWS account:
 
 1.	Create and manage S3 buckets
@@ -45,29 +71,28 @@ Typically, this solution should be deployed by a user with full access to your A
 
 **Note:** It will take few minutes for the stack to complete the deployment.
 
-4.	Once the stack is deployed, get the **Password** from Secrets manager for AdminUsername and in the cloudformation **Output** tab, note the value of the **AdminUsername**, and **TollFreeNumber**. Login to the **ConnectInstanceUrl** with these credentials. 
+## Deployment Validation
+
+1.	Once the stack is deployed, get the **Password** from Secrets manager for AdminUsername and in the cloudformation **Output** tab, note the value of the **AdminUsername**, and **TollFreeNumber**. Login to the **ConnectInstanceUrl** with these credentials. 
 
 ![Stackoutput](/assets/Stackoutput.png)
 
-5.	Navigate to the **ConnectInstanceUrl**. Log in to the application with the **AdminUsername** and **Password** collected in previous step. Make sure you allow microphone to access this URL and allow notifications if this pop up in your browser.
+2.	Navigate to the **ConnectInstanceUrl**. Log in to the application with the **AdminUsername** and **Password** collected in previous step. Make sure you allow microphone to access this URL and allow notifications if this pop up in your browser.
 
 ![Notification](/assets/Notification.png)
 
 ![Allow](/assets/Allow.png)
 
-6.	Set agent status as **available** in the agent workspace to take the first call.
+3.	Set agent status as **available** in the agent workspace to take the first call.
 
 ![CCP](/assets/CCP.png)
 
-7.	Call the **TollFreeNumber** for your first call experience and **accept** the call from Agent workspace.
+4.	Call the **TollFreeNumber** for your first call experience and **accept** the call from Agent workspace.
 
 ![Incomingcall](/assets/Incomingcall.png)
 
 ![Answeredcall](/assets/Answeredcall.png)
 
-## Cost
-
-Refer to amazon connect pricing: https://aws.amazon.com/connect/pricing/
 
 ## Cleanup
 1.	Select the CloudFormation stack created earlier.
