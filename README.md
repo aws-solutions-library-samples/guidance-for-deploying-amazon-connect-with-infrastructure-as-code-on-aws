@@ -1,9 +1,9 @@
 # Guidance for Deploying Amazon Connect with Infrastructure as Code on AWS
 
-# Table of Contents
+## Table of Contents
 
 1. Overview
-    1. Cost
+   - Cost
 2. Prerequisites
 3. Solution Overview and Architecture
 4. Deployment Steps
@@ -12,13 +12,13 @@
 7. Next Steps
 8. Cleanup
 
-# Overview
+## Overview
 
 This Guidance shows you how to deploy and manage Amazon Connect using Infrastructure as Code on AWS, enabling rapid contact center setup and optimization. The solution uses AWS CloudFormation templates to automate the provisioning of Amazon Connect instances, along with integrated AWS services for a complete contact center solution. By implementing this Infrastructure as Code approach, you gain consistent, repeatable deployments while reducing manual configuration errors and streamlining your operational processes.
 
 This Guidance is designed to be adaptable, allowing you to customize the deployment to meet your specific business requirements while maintaining operational excellence. This solution provides a foundation for delivering exceptional customer experiences at scale.
 
-## Cost
+### Cost
 
 You are responsible for the cost of the AWS services used while running this Guidance. The cost for running this Guidance with the default settings in the US East (N. Virginia) is approximately $46.87 per month for 1000 mins of inbound calls per month, with all calls analyzed by Contact Lens and getting recorded.
 
