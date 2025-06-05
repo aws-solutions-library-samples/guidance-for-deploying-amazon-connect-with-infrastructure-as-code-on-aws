@@ -1,4 +1,4 @@
-# Deploying Amazon Connect with Infrastructure as Code
+# Guidance for Deploying Amazon Connect with Infrastructure as Code on AWS
 
 This Guidance shows you how to deploy and manage Amazon Connect using Infrastructure as Code on AWS, enabling rapid contact center setup and optimization. The solution uses AWS CloudFormation templates to automate the provisioning of Amazon Connect instances, along with integrated AWS services for a complete contact center solution. By implementing this Infrastructure as Code approach, you gain consistent, repeatable deployments while reducing manual configuration errors and streamlining your operational processes.
 
