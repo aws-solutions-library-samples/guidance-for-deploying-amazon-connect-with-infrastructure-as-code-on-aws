@@ -22,6 +22,17 @@ This Guidance is designed to be adaptable, allowing you to customize the deploym
 
 You are responsible for the cost of the AWS services used while running this Guidance. The cost for running this Guidance with the default settings in the US East (N. Virginia) is approximately $46.87 per month for 1000 mins of inbound calls per month, with all calls analyzed by Contact Lens and getting recorded.
 
+The following table provides a sample cost breakdown for deploying this Guidance with the default parameters in the US East (N. Virginia) Region for one month.
+
+| AWS service | Dimensions | Cost [USD] |
+|---|---|---|
+| Amazon Connect Voice Inbound | 1000 minutes | 18 |
+| Amazon Connect Voice Inbound (Telephony) | 1000 minutes | 12 |
+| Amazon Connect Voice Inbound (Number) | 1 toll-free number | 1.83 |
+| Amazon Connect Contact Lens (Conversational Analytics) | 1000 minutes | 15 |
+| Amazon Connect Contact Lens (Conversational Analytics) | 1000 minutes | 15 |
+| Call Recordings (S3 Standard Storage) | 1000 minutes | 0.04 |
+
 ## Prerequisites
 
 For this guidance, it is assumed you have the following prerequisites:
@@ -93,6 +104,9 @@ Typically, this solution should be deployed by a user with full access to your A
 
 ![Answeredcall](/assets/Answeredcall.png)
 
+## Running the Guidance
+
+## Next Steps
 
 ## Cleanup
 1.	Select the CloudFormation stack created earlier.
