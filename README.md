@@ -36,7 +36,7 @@ The following table provides a sample cost breakdown for deploying this Guidance
 ## Prerequisites
 
 For this guidance, it is assumed you have the following prerequisites:
-1. An AWS account with administrator access to following services - Amazon Connect, AWS Lambda, AWS Secrets Manager, AWS AWS CloudFormation
+1. An AWS account with administrator access to following services - Amazon Connect, AWS Lambda, AWS Secrets Manager, AWS AWS CloudFormation, Amazon S3.
 
 
 ## Solution overview and architecture
@@ -64,14 +64,6 @@ The above solution deploys the required resources and follow the pattern:
 
 ## Deployment Steps
 
-To deploy this solution, you will need to have the following permissions in your AWS account:
-
-1.	Create and manage S3 buckets
-2.	Create and manage AWS Lambda resources
-3.	Create and manage Amazon Connect resources
-
-Typically, this solution should be deployed by a user with full access to your AWS environment.
-
 1.	Click on the "Launch Stack" button to deploy the solution in your preferred region. This will be the same region that was used to deploy your Amazon Connect instance.
 2.	Provide the required parameters:
     - Stack name
@@ -83,6 +75,10 @@ Typically, this solution should be deployed by a user with full access to your A
 **Note:** It will take few minutes for the stack to complete the deployment.
 
 ## Deployment Validation
+
+1. Open CloudFormation console and verify the status of the template with the stack name created in deployment steps
+
+## Running the Guidance
 
 1.	Once the stack is deployed, get the **Password** from Secrets manager for AdminUsername and in the cloudformation **Output** tab, note the value of the **AdminUsername**, and **TollFreeNumber**. Login to the **ConnectInstanceUrl** with these credentials. 
 
@@ -103,8 +99,6 @@ Typically, this solution should be deployed by a user with full access to your A
 ![Incomingcall](/assets/Incomingcall.png)
 
 ![Answeredcall](/assets/Answeredcall.png)
-
-## Running the Guidance
 
 ## Next Steps
 
