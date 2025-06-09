@@ -280,7 +280,6 @@ Resources:
                   - connect:ListSecurityProfiles
                   - connect:AssociatePhoneNumberContactFlow
                   - connect:DisassociatePhoneNumberContactFlow
-                  - states:StartExecution
                 Resource: "*"
               - Effect: Allow
                 Action:
