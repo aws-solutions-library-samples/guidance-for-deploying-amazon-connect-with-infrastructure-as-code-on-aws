@@ -65,7 +65,7 @@ The above solution deploys the required resources and follow the pattern:
 
 ## Deployment Steps
 
-1.	Click on the "Launch Stack" button to deploy the solution in your preferred region. This will be the same region that was used to deploy your Amazon Connect instance.
+1.	Download the **amazonconnect.yaml** file from the deployment folder in the repository. After downloading, access your AWS console and navigate to CloudFormation. Click on **Create stack**, keeping the default selection for **Prepare template**. For the **Specify template** section, select **Upload a template file** and upload the YAML file you just downloaded to your local machine. Once the file is uploaded, click on **Next**.
 2.	Provide the required parameters:
     - Stack name
 
